@@ -22,7 +22,6 @@ pretty :: (Eq a) => [(a, a)] -> [a]
 pretty l = case l of
    [] -> []
    x:xs -> if (isChained l) then nub ((fst x):(snd x): pretty xs) else []
- -- This gives the test cases but it's not correct because we don't want to nub everything. 
 
 
 
@@ -48,13 +47,71 @@ forward :: (Eq sy) => SLG sy -> Int -> sy -> [[sy]]
 forward g 0 q = [follows g q]
 forward g n q = forward' g n [q] 
 
-forward' :: (Eq sy) => SLG sy -> Int -> [sy] -> [[sy]]   --follows g (head (follows g q)) : forward g (n-1) q
-forward' g n xs = let (start, final, trans) = g in 
-    let next = head (follows g (head xs)) in
-    let int = n in 
-        case int of
-            0 -> [follows g (head xs)]
-            int' -> (follows g next) : forward' g(n-1) xs
+forward' :: (Eq sy) => SLG sy -> Int -> [sy] -> [[sy]]   
+forward' g n xs = let (start, final, trans) = g in
+     let followers = follows g (head xs) in 
+         case n of
+             0 -> [followers]
+             n' ->  ((concat (forward' g (n-1) xs)):map (\x -> (head xs) : x) [follows g (head (tail followers))])
+   --          (map (\x -> reverse (x : ([head (precedes g next)]))) heirs)
+
+         -- we wanna 
+         -- followers is what follows head xs, xs 
+         
+
+
+{- let followers = follows g (head xs) in
+     let heirs = concat [follows g (head (tail followers))] in
+      let next = head heirs in
+      case n of
+         0 -> [followers]
+         n' -> (map (\x -> reverse (x : ([head (precedes g next)]))) heirs)
+-}
+-- This forwards function does not give the correct output. only passes one test case. 
+-- gonna need helps.
+
+-- forward should 
+
+------ Discussion Section -------
+applyToAll :: (a -> a) -> [a] -> [a]
+applyToAll = \f -> \l -> case l of 
+    [] -> []
+    x:xs -> (f x) : (applyToAll f xs)
+
+suffixes :: [a] -> [[a]]
+suffixes = \l -> case l of
+    [] -> []
+    x:xs -> (x:xs) : (suffixes xs) 
+
+beforeAndAfter :: (a -> b) -> [a] -> [(a,b)]
+beforeAndAfte r f [] = []
+beforeAndAfter f (x:xs) = (x, f x) : (beforeAndAfter f xs) 
+
+
+inverseMap :: [(a -> b)] -> a -> [b]
+inverseMap [] x = []
+inverseMap  (f:fs) x = f x : (inverseMap fs x)
+-- plan: take followers list, prepend the preceding values of the followers list. each iteration of forwards goes deeper, and prepends more.        
+ -- 0 --> ["cat", "very", fat"]
+ -- 1 --> takes this list, and transforms it to be:
+ --  		take each element of followers, 
+ --         apply prepend, add it to each individual item in its own new list. 
+
+
+-- 0 is like "what's on the menu?"
+-- 1 is like.. menu + subscribers (precede)
+-- 3 is like, 
+    -- 1) if it's 0, return what follows that head element of xs 
+    -- 2) if it's 1, return precedes? (the cat, the very, the fat)
+    -- num represents distance... 
+--    let next = head (follows g (fst tail xs)) in
+--       case next of
+--         ([] -> []
+--          t -> (follows g (head xs):[(head xs):xs])
+--       case n of
+ --           0 -> [(head xs):[]]
+ --           int' -> (follows g next): forward' g(n-1) (tail xs)
+-- q: (follows g next) : forward' g(n-1) xs
 
 
 -- MORE EXAMPLE USAGE:
@@ -112,24 +169,3 @@ optional r = case r of
 
 
 
-
-
------- Discussion Section -------
-applyToAll :: (a -> a) -> [a] -> [a]
-applyToAll = \f -> \l -> case l of 
-    [] -> []
-    x:xs -> (f x) : (applyToAll f xs)
-
-suffixes :: [a] -> [[a]]
-suffixes = \l -> case l of
-    [] -> []
-    x:xs -> (x:xs) : (suffixes xs) 
-
-beforeAndAfter :: (a -> b) -> [a] -> [(a,b)]
-beforeAndAfter f [] = []
-beforeAndAfter f (x:xs) = (x, f x) : (beforeAndAfter f xs) 
-
-
-inverseMap :: [(a -> b)] -> a -> [b]
-inverseMap [] x = []
-inverseMap  (f:fs) x = f x : (inverseMap fs x)
