@@ -22,7 +22,9 @@ pretty :: (Eq a) => [(a, a)] -> [a]
 pretty l = case l of
    [] -> []
    x:xs -> if (isChained l) then nub ((fst x):(snd x): pretty xs) else []
- 
+ -- This gives the test cases but it's not correct because we don't want to nub everything. 
+
+
 
 follows :: (Eq sy) => SLG sy -> sy -> [sy]
 follows (start, final, trans) a =
@@ -42,6 +44,18 @@ precedes (start, final, trans) a =
 -- basically like follows but checking the second element in the head bigram against a. 
 
 
+forward :: (Eq sy) => SLG sy -> Int -> sy -> [[sy]]
+forward g 0 q = [follows g q]
+forward g n q = forward' g n [q] 
+
+forward' :: (Eq sy) => SLG sy -> Int -> [sy] -> [[sy]]   --follows g (head (follows g q)) : forward g (n-1) q
+forward' g n xs = let (start, final, trans) = g in 
+    let next = head (follows g (head xs)) in
+    let int = n in 
+        case int of
+            0 -> [follows g (head xs)]
+            int' -> (follows g next) : forward' g(n-1) xs
+
 
 -- MORE EXAMPLE USAGE:
 -- forward g2 1 "the"
@@ -50,25 +64,18 @@ precedes (start, final, trans) a =
 -- => [["very","very","very"],["very","very","fat"],["very","fat","cat"],
 --    ["very","very"],["very","fat"]]
 
-
-forward :: (Eq sy) => SLG sy -> Int -> sy -> [[sy]]
-forward g n q = let (start, final, trans) = g in 
-   
-
-
--- if g matches a transition head, 
--- get a follows list from there. 
+-- follows gives us the list of transitionable items from x. 
+-- forward gives us an iter, x, grammar, and returns
+-- ret: follows list, plus follows + following THAT list. "who are my followers following."
 
 
--- follows obtains a list. 
--- base case is n = 0 
+--let (start, final, trans) = g in 
+--    let int = n in 
+--    let next = head (follows g q) in 
+--     case int of
+ --        0 -> [follows g q]
+  --       int' -> (follows g next) : forward g (n-1) q
 
-
-
--- nub removes duplicates in a list
--- concat takes list of lists and concatenates them. 
-
--- so forward should take x, 
 
 -- MORE EXAMPLE USAGE:
 -- backward g2 1 "cat"
@@ -87,10 +94,25 @@ generates = undefined
 -------------------------------------------------------------------------------
 
 occurrences :: Int -> (RegEx a) -> (RegEx a)
-occurrences n r = undefined
+occurrences 0 r = One 
+occurrences n r = Concat (occurrences (n-1) r) (r) 
+
+-- In the code it seems a bit unintuitive that 0 occurrences returns One, 
+-- However, the test seems to be correct.
+-- denotation (occurrences 1 (Lit 'c')) => ["c"]
+-- denotation (occurrences 0 (Lit 'c')) => [""], which is equivalent to zero occurrences of One C. .
+-- However, concatenation with the empty list (Zero) yields the empty list. 
+
+
 
 optional :: (RegEx a) -> (RegEx a)
-optional = undefined
+optional r = case r of
+    Zero -> Zero
+    One -> One
+
+
+
+
 
 ------ Discussion Section -------
 applyToAll :: (a -> a) -> [a] -> [a]
