@@ -43,34 +43,75 @@ precedes (start, final, trans) a =
 -- basically like follows but checking the second element in the head bigram against a. 
 
 
+addTo :: (Eq sy) => SLG sy -> [sy] -> sy -> Int -> [sy]
+addTo g x y n = case n of
+    0 -> x 
+    n' -> (addTo g x y (n - 1)) ++ (appendNext g x y)
+        
+
+appendNext :: (Eq sy) => SLG sy -> [sy] -> sy -> [sy]
+appendNext g x y = let next = follows g y in
+    case next of
+       [] -> []
+       x:xs -> [y]
+
+
+
+-- We are appending "the" then the value, then essentially y value.
+-- then... append the head of y's followers.
+-- x is our OG symbol we wanna move forward from...
+-- X is our value from  the [followers], each element. 
+
 forward :: (Eq sy) => SLG sy -> Int -> sy -> [[sy]]
-forward g 0 q = [follows g q]
+forward g 0 q = [[q]]
 forward g n q = forward' g n [q] 
+
 
 forward' :: (Eq sy) => SLG sy -> Int -> [sy] -> [[sy]]   
 forward' g n xs = let (start, final, trans) = g in
      let followers = follows g (head xs) in 
+        let next = head followers in
          case n of
              0 -> [followers]
-             n' ->  ((concat (forward' g (n-1) xs)):map (\x -> (head xs) : x) [follows g (head (tail followers))])
-   --          (map (\x -> reverse (x : ([head (precedes g next)]))) heirs)
-
-         -- we wanna 
-         -- followers is what follows head xs, xs 
-         
+             n' -> map (\x -> addTo g xs x n) (concat (forward' g (n-1) xs))
+                
 
 
-{- let followers = follows g (head xs) in
+
+-- MORE EXAMPLE USAGE:
+-- forward g2 1 "the"
+-- => [["the","cat"],["the","very"],["the","fat"]]
+-- forward g2 2 "very"
+-- => [["very","very","very"],["very","very","fat"],["very","fat","cat"],
+--    ["very","very"],["very","fat"]]
+
+--make a new function that appends "the" ++ x, x being the result of followers. 
+-- ESSENTIALLY, forward should return it's base case [followers] if 0, and if not zero, then it should:
+    -- MAP to each value obtained from recursing through forwards (to get base case... ["cat", "very", "fat"])
+     -- then append the element from basecase to the element that precedes it in a new list, and reverse it.
+     -- This does not work for all cases. 
+
+
+{-let (start, final, trans) = g in 
+   let int = n in 
+   let next = head (follows g q) in 
+    case int of
+        0 -> [follows g q]
+        int' -> (follows g next) : forward g (n-1) q
+-}
+
+
+{- -- This forwards function does not give the correct output. only passes one test case. 
+-- gonna need helps. Returns correct output only for n=1 because of hacky solution.
+
+let followers = follows g (head xs) in
      let heirs = concat [follows g (head (tail followers))] in
       let next = head heirs in
       case n of
          0 -> [followers]
          n' -> (map (\x -> reverse (x : ([head (precedes g next)]))) heirs)
 -}
--- This forwards function does not give the correct output. only passes one test case. 
--- gonna need helps.
 
--- forward should 
 
 ------ Discussion Section -------
 applyToAll :: (a -> a) -> [a] -> [a]
@@ -91,27 +132,7 @@ beforeAndAfter f (x:xs) = (x, f x) : (beforeAndAfter f xs)
 inverseMap :: [(a -> b)] -> a -> [b]
 inverseMap [] x = []
 inverseMap  (f:fs) x = f x : (inverseMap fs x)
--- plan: take followers list, prepend the preceding values of the followers list. each iteration of forwards goes deeper, and prepends more.        
- -- 0 --> ["cat", "very", fat"]
- -- 1 --> takes this list, and transforms it to be:
- --  		take each element of followers, 
- --         apply prepend, add it to each individual item in its own new list. 
 
-
--- 0 is like "what's on the menu?"
--- 1 is like.. menu + subscribers (precede)
--- 3 is like, 
-    -- 1) if it's 0, return what follows that head element of xs 
-    -- 2) if it's 1, return precedes? (the cat, the very, the fat)
-    -- num represents distance... 
---    let next = head (follows g (fst tail xs)) in
---       case next of
---         ([] -> []
---          t -> (follows g (head xs):[(head xs):xs])
---       case n of
- --           0 -> [(head xs):[]]
- --           int' -> (follows g next): forward' g(n-1) (tail xs)
--- q: (follows g next) : forward' g(n-1) xs
 
 
 -- MORE EXAMPLE USAGE:
@@ -120,18 +141,6 @@ inverseMap  (f:fs) x = f x : (inverseMap fs x)
 -- forward g2 2 "very"
 -- => [["very","very","very"],["very","very","fat"],["very","fat","cat"],
 --    ["very","very"],["very","fat"]]
-
--- follows gives us the list of transitionable items from x. 
--- forward gives us an iter, x, grammar, and returns
--- ret: follows list, plus follows + following THAT list. "who are my followers following."
-
-
---let (start, final, trans) = g in 
---    let int = n in 
---    let next = head (follows g q) in 
---     case int of
- --        0 -> [follows g q]
-  --       int' -> (follows g next) : forward g (n-1) q
 
 
 -- MORE EXAMPLE USAGE:
