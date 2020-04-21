@@ -44,17 +44,17 @@ precedes (start, final, trans) a =
 
 
 addTo :: (Eq sy) => SLG sy -> [sy] -> sy -> Int -> [sy]
-addTo g x y n = case n of
+addTo g x y n = let next = follows g y in 
+    case n of
     0 -> x 
-    n' -> (addTo g x y (n - 1)) ++ (appendNext g x y)
+    n' -> (addTo g x (head (appendNext g x y)) (n-1) ++ (appendNext g x y))
         
 
 appendNext :: (Eq sy) => SLG sy -> [sy] -> sy -> [sy]
-appendNext g x y = let next = follows g y in
+appendNext g x y = let next = follows g (head x) in
     case next of
-       [] -> []
-       x:xs -> [y]
-
+       [] -> [head next]
+       x:xs -> [head next]
 
 
 -- We are appending "the" then the value, then essentially y value.
@@ -70,13 +70,33 @@ forward g n q = forward' g n [q]
 forward' :: (Eq sy) => SLG sy -> Int -> [sy] -> [[sy]]   
 forward' g n xs = let (start, final, trans) = g in
      let followers = follows g (head xs) in 
-        let next = head followers in
          case n of
              0 -> [followers]
-             n' -> map (\x -> addTo g xs x n) (concat (forward' g (n-1) xs))
+             n' -> map (\x ->  (addTo g xs x n)) (concat (forward' g (n-1) xs))
                 
 
 
+
+
+
+---- Class Lecture 4/21/2020
+--Wrapper Function
+f :: Int -> Int -> [Int]
+f n x = nub $ f' n [x] 
+
+
+f' :: Int -> [Int] -> [Int]
+f' _ [] = []
+f' 0 xs = xs
+f' n xs = 
+    addTwos ++ minusFives
+   where
+     input = f' (n-1) xs
+     addTwos = map (\y -> y + 2) input
+     minusFives = map (\y-> y - 5) input
+
+-- FORWARD calls AddTo, in the map, to add a value ("the") to each value of [followers]. 
+-- 
 
 -- MORE EXAMPLE USAGE:
 -- forward g2 1 "the"
@@ -177,4 +197,21 @@ optional r = case r of
     One -> One
 
 
+
+{-f' 1 xs = 
+    addTwos ++ minusFives
+   where
+     addTwos = map (\y -> y +  2) xs
+     minusFives = map (\y -> y - 5) xs
+
+f' 2 xs = 
+    addTwos ++ minusFives
+   where
+    addTwos = map (\y -> y + 2) (f' 1 xs)
+    minusFives = map (\y -> y -5) (f' 1 xs)
+-}
+
+--- :t lets us see it in interpretor. 
+
+-- Can be re-written using the Go function.
 
